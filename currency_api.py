@@ -1,6 +1,8 @@
+import logging
+
 import  aiohttp
 from datetime import date
-
+logger = logging.getLogger(__name__)
 
 
 BASE_URL = "https://www.cbr-xml-daily.ru/daily_json.js"
@@ -44,7 +46,8 @@ async  def get_currency(user_text: str):
                     return "Не возможно получить информацию о курсе валют."
 
     except Exception as e:
-        return f"Ошибка {e}"
+        logger.error(f"Ошибка при получении данных о валюте '{user_text}': {e}")
+        return "⚠️ Не удалось получить курс валюты. Попробуй позже."
 
 
 

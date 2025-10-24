@@ -71,45 +71,51 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     users = load_users()
     user_id_str = str(user.id)
+    try:
+        if user_id_str not in users:
+            await start_command(update, context)
+            return
 
-    if user_id_str not in users:
-        await start_command(update, context)
-        return
-
-    if user_text == "Погода 🌤️":
-        weather_keyboard = ReplyKeyboardMarkup([
-            ["Москва"],
-            ["Санкт-Петербург"]
-        ], resize_keyboard=True)
-        await update.message.reply_text("В каком городе ты хочешь проверить погоду?", reply_markup=weather_keyboard)
-    elif user_text == "Москва":
+        if user_text == "Погода 🌤️":
+            weather_keyboard = ReplyKeyboardMarkup([
+                ["Москва"],
+                ["Санкт-Петербург"]
+            ], resize_keyboard=True)
+            await update.message.reply_text("В каком городе ты хочешь проверить погоду?", reply_markup=weather_keyboard)
+        elif user_text == "Москва":
+                await update.message.reply_text(await get_weather(user_text))
+                await show_main_keyboard(update)
+        elif user_text == "Санкт-Петербург":
             await update.message.reply_text(await get_weather(user_text))
             await show_main_keyboard(update)
-    elif user_text == "Санкт-Петербург":
-        await update.message.reply_text(await get_weather(user_text))
-        await show_main_keyboard(update)
-    elif user_text == "Курс валют 💰":
-        currency_keyboard = ReplyKeyboardMarkup([
-            ["Курс доллара 💵"],
-            ["Курс евро 💶"]
-        ], resize_keyboard=True)
-        await update.message.reply_text("Выбери валюту:", reply_markup=currency_keyboard)
-    elif user_text == "Курс доллара 💵":
-        await update.message.reply_text(await get_currency(user_text))
-        await show_main_keyboard(update)
-    elif user_text == "Курс евро 💶":
-        await update.message.reply_text(await get_currency(user_text))
-        await show_main_keyboard(update)
-    elif user_text == "Случайное число 🎲":
-        import random
-        number = random.randint(1,100)
-        await update.message.reply_text(f"Твое число: {number}")
-    elif "привет" in user_text_lower:
-        await update.message.reply_text("И тебе привет! 👋")
-    elif "как дела" in user_text_lower:
-        await update.message.reply_text("У меня всё отлично! А у тебя?")
-    else:
-        await update.message.reply_text("Я пока умею только приветствовать! Используй /help")
+        elif user_text == "Курс валют 💰":
+            currency_keyboard = ReplyKeyboardMarkup([
+                ["Курс доллара 💵"],
+                ["Курс евро 💶"]
+            ], resize_keyboard=True)
+            await update.message.reply_text("Выбери валюту:", reply_markup=currency_keyboard)
+        elif user_text == "Курс доллара 💵":
+            await update.message.reply_text(await get_currency(user_text))
+            await show_main_keyboard(update)
+        elif user_text == "Курс евро 💶":
+            await update.message.reply_text(await get_currency(user_text))
+            await show_main_keyboard(update)
+        elif user_text == "Случайное число 🎲":
+            import random
+            number = random.randint(1,100)
+            await update.message.reply_text(f"Твое число: {number}")
+        elif "привет" in user_text_lower:
+            await update.message.reply_text("И тебе привет! 👋")
+        elif "как дела" in user_text_lower:
+            await update.message.reply_text("У меня всё отлично! А у тебя?")
+        else:
+            await update.message.reply_text("Я пока умею только приветствовать! Используй /help")
+    except Exception as e:
+        logger.error(f"Необработанная ошибка в handle_message: {e}", exc_info=True)
+        try:
+            await update.message.reply_text("⚠️ Произошла ошибка. Админ уже чинит!")
+        except:
+            pass
 
 
 def main():
@@ -120,7 +126,7 @@ def main():
 
     # application.add_handler(CallbackQueryHandler(button_click))
 
-    print("Бот запущен...")
+    logger.info("Бот запущен...")
 
 
     application.run_polling()

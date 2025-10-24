@@ -1,7 +1,9 @@
 import asyncio
+import logging
 import time
 from dotenv import load_dotenv
 import os
+logger = logging.getLogger(__name__)
 load_dotenv()
 TOKEN = os.getenv("OPENWEATHER_API_KEY")
 
@@ -21,8 +23,8 @@ async def get_weather(city: str) -> str:
     if city_key in weather_cache:
         cached = weather_cache[city_key]
         if current_time - cached["timestamp"] < CACHE_DURATION:
-            print("Взял данные из кэша")
-        # print(f"До обновления данных {int(CACHE_DURATION - (current_time - cached["timestamp"])} секунд")
+            logger.info("Взял данные из кэша")
+        logger.info(f"До обновления данных {int(CACHE_DURATION - (current_time - cached["timestamp"]))} секунд")
         return f"Погода в {cached['city_name']}:\n{cached['temperature']}°C, {cached['description']}"
     try:
         async with aiohttp.ClientSession() as session:
@@ -52,7 +54,7 @@ async def get_weather(city: str) -> str:
                     return "Ошибка при получении погоды"
 
     except Exception as e:
-        return f"Ошибка {e}"
-
+        logger.error(f"Ошибка в get_weather для города '{city}': {e}")
+        return "⚠️ Не удалось получить погоду. Попробуй позже."
 
 
