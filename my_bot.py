@@ -4,6 +4,8 @@ from data_manager import load_users, increment_message_count, register_user
 from weather_api import get_weather
 from currency_api import get_currency
 from dotenv import load_dotenv
+import logging
+import sys
 import os
 
 logging.basicConfig(
