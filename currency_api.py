@@ -44,7 +44,7 @@ async  def get_currency(user_text: str):
                     return "Не возможно получить информацию о курсе валют."
 
     except Exception as e:
-        return [f"Ошибка {e}"]
+        return f"Ошибка {e}"
 
 
 

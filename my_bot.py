@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters, CallbackQueryHandler
-from data_manager import load_users, increment_message_count,register_user
+from data_manager import load_users, increment_message_count, register_user
 from weather_api import get_weather
 from currency_api import get_currency
 from dotenv import load_dotenv
