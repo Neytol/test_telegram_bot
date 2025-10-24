@@ -5,6 +5,17 @@ from weather_api import get_weather
 from currency_api import get_currency
 from dotenv import load_dotenv
 import os
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("bot.log", encoding='utf-8'),  # Логи в файл
+        logging.StreamHandler(sys.stdout)                 # И в консоль
+    ]
+)
+logger = logging.getLogger(__name__)
+
 load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
