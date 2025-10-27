@@ -13,7 +13,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler("bot.log", encoding='utf-8'),  # Логи в файл
-        logging.StreamHandler(sys.stdout)                 # И в консоль
+        logging.StreamHandler(sys.stdout)  # И в консоль
     ]
 )
 logger = logging.getLogger(__name__)
@@ -23,51 +23,76 @@ load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 
 
-# async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
-#     # if "help" in update.callback_query.data:
-#     #     await update.callback_query.edit_message_text("Тут пока ничего нет")
-#     # elif "about" in update.callback_query.data:
-#     #     await update.callback_query.edit_message_text("Этот бот создан для обучения!")
-#     # await update.callback_query.answer()
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == "weather":
+        weather_buttons = [
+            [InlineKeyboardButton("Москва", callback_data="moscow")],
+            [InlineKeyboardButton("Санкт-Петербург", callback_data="piter")]
+        ]
+        reply_markup = InlineKeyboardMarkup(weather_buttons)
+        await query.edit_message_text("🌤️ Напиши название города:", reply_markup=reply_markup)
+        context.user_data["awaiting_weather"] = True
+        return
+    if query.data == "currency":
+        currency_buttons = [
+            [InlineKeyboardButton("Курс доллара 💵", callback_data="usd")],
+            [InlineKeyboardButton("Курс евро 💶", callback_data="eur")]
+        ]
+        reply_markup = InlineKeyboardMarkup(currency_buttons)
+        await query.edit_message_text("Выберите валюту:", reply_markup=reply_markup)
+        context.user_data["awaiting_currency"] = True
+        return
+    if query.data == "moscow":
+        await update.callback_query.edit_message_text(await get_weather("москва"), reply_markup=show_main_buttons())
+    if query.data == "piter":
+        await update.callback_query.edit_message_text(await get_weather("санкт-петербург"),
+                                                      reply_markup=show_main_buttons())
+    if query.data == "usd":
+        await update.callback_query.edit_message_text(await get_currency("USD"), reply_markup=show_main_buttons())
+    if query.data == "eur":
+        await update.callback_query.edit_message_text(await get_currency("EUR"), reply_markup=show_main_buttons())
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # help_button = InlineKeyboardButton("Помощь", callback_data = "help")
-    # about_button = InlineKeyboardButton("О боте", callback_data = "about")
-
     user = update.message.from_user
     is_new = register_user(user.id, user.username, user.first_name)
-
     welcome = f"Привет {user.first_name}, рад познакомится! 👋" if is_new else f"С возвращением {user.first_name}! 👋"
-
-    reply_keyboard = ReplyKeyboardMarkup([
-        ["Погода 🌤️", "Курс валют 💰"],
-        ["Случайное число 🎲"], ["Показвать профиль"]
-    ],resize_keyboard=True)
-
-    # inline_keyboard = InlineKeyboardMarkup([
-    #     [help_button],
-    #     [about_button]
-    # ])
-    # await update.message.reply_text(f"{welcome} Выбери действие:", reply_markup=inline_keyboard)
-    await update.message.reply_text(f"{welcome}", reply_markup=reply_keyboard)
+    await update.message.reply_text(welcome, reply_markup=show_main_buttons())
 
 
-async def show_main_keyboard(update: Update):
-    reply_keyboard = ReplyKeyboardMarkup([
-        ["Погода 🌤️", "Курс валют 💰"],
-        ["Случайное число 🎲"],["Показать профиль"]
-    ], resize_keyboard=True)
-    await update.message.reply_text("Выбери действие: ",reply_markup=reply_keyboard)
+def show_main_buttons():
+    keyboard = [
+        [InlineKeyboardButton("🌤️ Погода", callback_data="weather")],
+        [InlineKeyboardButton("💰 Курс валюты", callback_data="currency")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return reply_markup
 
+
+async def handle_awaiting_input(update: Update, context: ContextTypes.DEFAULT_TYPE, user_text: str):
+    if context.user_data.get("awaiting_weather"):
+        context.user_data["awaiting_weather"] = False
+        result = await get_weather(user_text)
+    elif context.user_data.get("awaiting_currency"):
+        context.user_data["awaiting_currency"] = False
+        result = await get_currency(user_text)
+    else:
+        return False
+
+    await update.message.reply_text(result, reply_markup=show_main_buttons())
+    return True
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
     user_text = update.message.text
-    user_text_lower = user_text.lower()
     increment_message_count(user.id)
 
+    if await handle_awaiting_input(update, context, user_text):
+        return
 
     users = load_users()
     user_id_str = str(user.id)
@@ -75,39 +100,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if user_id_str not in users:
             await start_command(update, context)
             return
-
-        if user_text == "Погода 🌤️":
-            weather_keyboard = ReplyKeyboardMarkup([
-                ["Москва"],
-                ["Санкт-Петербург"]
-            ], resize_keyboard=True)
-            await update.message.reply_text("В каком городе ты хочешь проверить погоду?", reply_markup=weather_keyboard)
-        elif user_text == "Москва":
-                await update.message.reply_text(await get_weather(user_text))
-                await show_main_keyboard(update)
-        elif user_text == "Санкт-Петербург":
-            await update.message.reply_text(await get_weather(user_text))
-            await show_main_keyboard(update)
-        elif user_text == "Курс валют 💰":
-            currency_keyboard = ReplyKeyboardMarkup([
-                ["Курс доллара 💵"],
-                ["Курс евро 💶"]
-            ], resize_keyboard=True)
-            await update.message.reply_text("Выбери валюту:", reply_markup=currency_keyboard)
-        elif user_text == "Курс доллара 💵":
-            await update.message.reply_text(await get_currency(user_text))
-            await show_main_keyboard(update)
-        elif user_text == "Курс евро 💶":
-            await update.message.reply_text(await get_currency(user_text))
-            await show_main_keyboard(update)
-        elif user_text == "Случайное число 🎲":
-            import random
-            number = random.randint(1,100)
-            await update.message.reply_text(f"Твое число: {number}")
-        elif "привет" in user_text_lower:
-            await update.message.reply_text("И тебе привет! 👋")
-        elif "как дела" in user_text_lower:
-            await update.message.reply_text("У меня всё отлично! А у тебя?")
         else:
             await update.message.reply_text("Я пока умею только приветствовать! Используй /help")
     except Exception as e:
@@ -120,18 +112,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     application = Application.builder().token(TOKEN).build()
-
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(MessageHandler(filters.TEXT, handle_message))
-
-    # application.add_handler(CallbackQueryHandler(button_click))
-
+    application.add_handler(CallbackQueryHandler(button_handler))
     logger.info("Бот запущен...")
-
-
     application.run_polling()
 
 
 if __name__ == "__main__":
     main()
-
