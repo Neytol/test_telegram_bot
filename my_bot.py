@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
+ADMIN_USER_ID = os.getenv("ADMIN_USER_ID")
 
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
