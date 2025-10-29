@@ -3,8 +3,8 @@
 ## Functions
 - 🌤️ Weather conditions in any city
 - 💰 Dollar and Euro exchange rates
-- 🎲 Random number generator
-- 👤 User profile
+
+
 
 ## How to launch
 1. Create the '.env` file:
