@@ -2,7 +2,7 @@ import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 from config import ADMIN_USER_ID
-from data_manager import load_users
+from database import get_all_users
 from logger import logger
 
 
@@ -16,12 +16,13 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Использование: /broadcast <текст>")
         return
 
-    users = load_users()
+    users = await get_all_users()
     message_text = " ".join(context.args)
     success = 0
     failed = 0
 
-    for user_id in users.keys():
+    for user in users:
+        user_id = user["id"]
         try:
             await context.bot.send_message(chat_id=int(user_id), text=message_text)
             success += 1

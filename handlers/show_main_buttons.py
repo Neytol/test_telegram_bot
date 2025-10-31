@@ -1,10 +1,8 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-
 from config import ADMIN_USER_ID
 
 
 def show_main_buttons(user_id: int):
-    # user_id = update.message.from_user.id if update.message else update.callback_query.from_user.id
     keyboard = [
         [InlineKeyboardButton("🌤️ Погода", callback_data="weather")],
         [InlineKeyboardButton("💰 Курс валюты", callback_data="currency")],

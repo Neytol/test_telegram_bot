@@ -3,7 +3,7 @@ from telegram.ext import ContextTypes
 from api.currency_api import get_currency
 from api.weather_api import get_weather
 from config import ADMIN_USER_ID
-from data_manager import load_users
+from database import get_all_users
 from handlers.show_main_buttons import show_main_buttons
 from logger import logger
 
@@ -31,21 +31,21 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             context.user_data["awaiting_currency"] = True
             return
         if query.data == "moscow":
-            await update.callback_query.edit_message_text(await get_weather("москва"), reply_markup= show_main_buttons(update.callback_query.from_user.id))
+            await update.callback_query.edit_message_text(await get_weather("москва"), reply_markup= show_main_buttons(query.from_user.id))
         if query.data == "piter":
             await update.callback_query.edit_message_text(await get_weather("санкт-петербург"),
-                                                          reply_markup=  show_main_buttons(update.callback_query.from_user.id))
+                                                          reply_markup=  show_main_buttons(query.from_user.id))
         if query.data == "usd":
-            await update.callback_query.edit_message_text(await get_currency("USD"), reply_markup=  show_main_buttons(update.callback_query.from_user.id))
+            await update.callback_query.edit_message_text(await get_currency("USD"), reply_markup=  show_main_buttons(query.from_user.id))
         if query.data == "eur":
-            await update.callback_query.edit_message_text(await get_currency("EUR"), reply_markup=  show_main_buttons(update.callback_query.from_user.id))
+            await update.callback_query.edit_message_text(await get_currency("EUR"), reply_markup=  show_main_buttons(query.from_user.id))
         if query.data == "stats":
             if update.callback_query.from_user.id != ADMIN_USER_ID:
                 return update.callback_query.edit_message_text("Доступ запрещен", show_main_buttons(query.from_user.id))
-            users = load_users()
+            users =  await get_all_users()
             total_users = len(users)
             total_messages = sum(user.get("message_count", 0) for user in users.values())
             text = f"Статистика:\n"f"Колличество пользователей: {total_users}\n"f"Колличество сообщений: {total_messages}"
-            await update.callback_query.edit_message_text(text, reply_markup= show_main_buttons(update.callback_query.from_user.id))
+            await update.callback_query.edit_message_text(text, reply_markup= show_main_buttons(query.from_user.id))
     except Exception as e:
         logger.error(e)
