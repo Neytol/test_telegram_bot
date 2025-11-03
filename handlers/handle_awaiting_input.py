@@ -14,6 +14,5 @@ async def handle_awaiting_input(update: Update, context: ContextTypes.DEFAULT_TY
         result = await get_currency(user_text)
     else:
         return False
-
     await update.message.reply_text(result, reply_markup= show_main_buttons(update.message.from_user.id))
     return True

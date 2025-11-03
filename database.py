@@ -1,5 +1,9 @@
 from datetime import datetime
 import aiosqlite
+from telegram import Update
+from telegram.ext import ContextTypes
+from config import ADMIN_USER_ID
+from logger import logger
 
 DB_PATH = "bot.db"
 
@@ -20,7 +24,7 @@ async def init_db():
 async def register_user(user_id: int, username: str, first_name: str) -> bool:
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute("SELECT 1 FROM users WHERE id = ?", (user_id,))
-        exist = await  cursor.fetchone()
+        exist = await cursor.fetchone()
 
         if not exist:
             now = datetime.now().strftime("%Y-%m-%d %H-%M:%S")
@@ -36,8 +40,8 @@ async def increment_message_count(user_id: int):
     async with aiosqlite.connect(DB_PATH) as db:
         now = datetime.now().strftime("%Y-%m-%d %H-%M:%S")
         await db.execute(
-            "UPDATE users SET message_count = message_count + 1, last_activity = ?, WHERE id = ?",
-            (user_id, now)
+            "UPDATE users SET message_count = message_count + 1, last_activity = ? WHERE id = ?",
+            (now, user_id)
         )
         await db.commit()
 

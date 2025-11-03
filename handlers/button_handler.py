@@ -20,6 +20,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup = InlineKeyboardMarkup(weather_buttons)
             await query.edit_message_text("🌤️ Напиши название города:", reply_markup=reply_markup)
             context.user_data["awaiting_weather"] = True
+            print(context.user_data)
             return
         if query.data == "currency":
             currency_buttons = [
@@ -44,7 +45,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return update.callback_query.edit_message_text("Доступ запрещен", show_main_buttons(query.from_user.id))
             users =  await get_all_users()
             total_users = len(users)
-            total_messages = sum(user.get("message_count", 0) for user in users.values())
+            total_messages = sum(user.get("message_count", 0) for user in users)
             text = f"Статистика:\n"f"Колличество пользователей: {total_users}\n"f"Колличество сообщений: {total_messages}"
             await update.callback_query.edit_message_text(text, reply_markup= show_main_buttons(query.from_user.id))
     except Exception as e:
