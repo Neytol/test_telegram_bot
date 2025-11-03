@@ -72,3 +72,24 @@ async def get_all_users():
             }
             for row in rows
         ]
+
+async def delete_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.from_user.id != ADMIN_USER_ID:
+        await update.message.reply_text("❌ Доступ запрещён.")
+        return
+    if not context.args:
+        await update.message.reply_text("Использование: /delete <Имя пользователя>")
+        return
+    try:
+        users = await get_all_users()
+        user_name = " ".join(context.args)
+        for u in users:
+            if user_name != u['username']:
+                await update.message.reply_text("Такого пользователя не существует")
+                return
+        async with aiosqlite.connect(DB_PATH) as db:
+            await db.execute("DELETE FROM users WHERE username = ?", (user_name,))
+            await db.commit()
+            await update.message.reply_text(f"Пользователь {user_name} удален из базы")
+    except Exception as e:
+        logger.info(e)
