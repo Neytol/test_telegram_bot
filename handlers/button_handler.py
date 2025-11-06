@@ -15,12 +15,14 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if query.data == "weather":
             weather_buttons = [
                 [InlineKeyboardButton("Москва", callback_data="moscow")],
-                [InlineKeyboardButton("Санкт-Петербург", callback_data="piter")]
+                [InlineKeyboardButton("Санкт-Петербург", callback_data="piter")],
+                [InlineKeyboardButton("🌍 Ввести другой город", callback_data="another_city")]
             ]
             reply_markup = InlineKeyboardMarkup(weather_buttons)
-            await query.edit_message_text("🌤️ Напиши название города:", reply_markup=reply_markup)
+            await query.edit_message_text("🌤️ Веберите город:", reply_markup=reply_markup)
+        if query.data == "another_city":
+            await query.edit_message_text("🌤️ Напиши название города:")
             context.user_data["awaiting_weather"] = True
-            print(context.user_data)
             return
         if query.data == "currency":
             currency_buttons = [
@@ -29,7 +31,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]
             reply_markup = InlineKeyboardMarkup(currency_buttons)
             await query.edit_message_text("Выберите валюту:", reply_markup=reply_markup)
-            context.user_data["awaiting_currency"] = True
             return
         if query.data == "moscow":
             await update.callback_query.edit_message_text(await get_weather("москва"), reply_markup= show_main_buttons(query.from_user.id))

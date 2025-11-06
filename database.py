@@ -85,15 +85,17 @@ async def delete_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Использование: /delete <Имя пользователя>")
         return
     try:
-        users = await get_all_users()
-        user_name = " ".join(context.args)
-        for u in users:
-            if user_name != u['username']:
-                await update.message.reply_text("Такого пользователя не существует")
-                return
-        async with aiosqlite.connect(DB_PATH) as db:
-            await db.execute("DELETE FROM users WHERE username = ?", (user_name,))
-            await db.commit()
-            await update.message.reply_text(f"Пользователь {user_name} удален из базы")
-    except Exception as e:
-        logger.info(e)
+        user_id = int(context.args[0])
+    except ValueError:
+        await update.message.reply_text("ID должен быть числом")
+        return
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute("SELECT 1 FROM users WHERE id = ?", (user_id,))
+        exist = await cursor.fetchone()
+
+        if not exist:
+            await update.message.reply_text(f"Пользователь с id {user_id} не найден")
+            return
+        await db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        await db.commit()
+        await update.message.reply_text(f"Пользователь {user_id} удален из базы")
