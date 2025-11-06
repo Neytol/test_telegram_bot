@@ -24,7 +24,7 @@ async def get_weather(city: str) -> str:
         cached = weather_cache[city_key]
         if current_time - cached["timestamp"] < CACHE_DURATION:
             logger.info("Взял данные из кэша")
-        logger.info(f"До обновления данных {int(CACHE_DURATION - (current_time - cached["timestamp"]))} секунд")
+            logger.info(f"До обновления данных {int(CACHE_DURATION - (current_time - cached["timestamp"]))} секунд")
         return f"Погода в {cached['city_name']}:\n{cached['temperature']}°C, {cached['description']}"
     try:
         async with aiohttp.ClientSession() as session:
