@@ -8,6 +8,5 @@
 
 ## How to launch
 1. Create the '.env` file:
-``env
    BOT_TOKEN=YOUR_TOKEN_OT_BOTFATHER
    OPENWEATHER_API_KEY=your_openweathermap key
