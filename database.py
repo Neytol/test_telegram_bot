@@ -99,3 +99,17 @@ async def delete_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await db.execute("DELETE FROM users WHERE id = ?", (user_id,))
         await db.commit()
         await update.message.reply_text(f"Пользователь {user_id} удален из базы")
+
+
+async def set_favorite_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text("Использование: /setcity <город>")
+        return
+    city = " ".join(context.args)
+    user_id = update.message.from_user.id
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("UPDATE users SET favorite_city = ? WHERE id = ?", (city, user_id,))
+        await db.commit()
+    await update.message.reply_text(f"Город по умолчанию {city}")
+
