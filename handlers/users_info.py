@@ -16,5 +16,6 @@ async def users_info(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "first_name": {u['first_name']},
             "message_count": {u['message_count']},
             "registered": {u['registered']},
-            "last_activity": {u['last_activity']}
+            "last_activity": {u['last_activity']},
+            "favorite_city": {u['favorite_city']}
             """)
