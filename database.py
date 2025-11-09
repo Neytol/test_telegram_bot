@@ -3,7 +3,6 @@ import aiosqlite
 from telegram import Update
 from telegram.ext import ContextTypes
 from config import ADMIN_USER_ID
-from logger import logger
 
 DB_PATH = "bot.db"
 
@@ -19,6 +18,13 @@ async def init_db():
                  last_activity TEXT
             )
         """)
+        try:
+            await db.execute("ALTER TABLE users ADD COLUMN favorite_city TEXT")
+        except aiosqlite.OperationalError as e:
+            if "duplicate column name" in str(e):
+                pass
+            else:
+                raise
         await db.commit()
 
 async def register_user(user_id: int, username: str, first_name: str) -> bool:
@@ -29,8 +35,8 @@ async def register_user(user_id: int, username: str, first_name: str) -> bool:
         if not exist:
             now = datetime.now().strftime("%Y-%m-%d %H-%M:%S")
             await db.execute(
-                "INSERT INTO users (id, username, first_name, registered, last_activity) VALUES (?, ?, ?, ?, ?)",
-                (user_id, username, first_name, now, now)
+                "INSERT INTO users (id, username, first_name, registered, last_activity, favorite_city) VALUES (?, ?, ?, ?, ?, ?)",
+                (user_id, username, first_name, now, now, None)
             )
             await db.commit()
             return True
@@ -56,7 +62,8 @@ async def get_user(user_id: int):
                 "first_name": row[2],
                 "message_count": row[3],
                 "registered": row[4],
-                "last_activity": row[5]
+                "last_activity": row[5],
+                "favorite_city": row[6]
             }
         return None
 
@@ -72,7 +79,8 @@ async def get_all_users():
                 "first_name": row[2],
                 "message_count": row[3],
                 "registered": row[4],
-                "last_activity": row[5]
+                "last_activity": row[5],
+                "favorite_city": row[6]
             }
             for row in rows
         ]
@@ -92,7 +100,6 @@ async def delete_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute("SELECT 1 FROM users WHERE id = ?", (user_id,))
         exist = await cursor.fetchone()
-
         if not exist:
             await update.message.reply_text(f"Пользователь с id {user_id} не найден")
             return
