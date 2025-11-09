@@ -38,7 +38,7 @@ async def get_weather(city: str) -> str:
             ) as response:
                 if response.status == 200:
                     data = await response.json()
-                    temperature = data['main']['temp']
+                    temperature = round(data['main']['temp'])
                     description = data['weather'][0]['description']
                     city_name = data['name']
                     weather_cache[city_key] = {
