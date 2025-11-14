@@ -9,8 +9,8 @@ from handlers.start_command import start_command
 from handlers.users_info import users_info
 from logger import logger    
 
-def main():
-    asyncio.run(init_db())
+async def main():
+    await init_db()
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("delete", delete_user))
     application.add_handler(CommandHandler("start", start_command))
@@ -18,7 +18,7 @@ def main():
     application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(CommandHandler("broadcast", broadcast_command))
     application.add_handler(CommandHandler("users_info", users_info))
-    application.add_handler(CommandHandler("setcity", set_favorite_city))
+    application.add_handler(CommandHandler("set_city", set_favorite_city))
     logger.info("Бот запущен...")
     application.run_polling()
 
