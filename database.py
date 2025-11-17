@@ -6,7 +6,15 @@ from config import ADMIN_USER_ID
 
 DB_PATH = "bot.db"
 
+
 async def init_db():
+    """Инициализирует базу данных при запуске бота.
+
+    Создаёт таблицу `users`, если она не существует, с полями:
+    id, username, first_name, message_count, registered, last_activity.
+    Также добавляет колонку `favorite_city`, если её ещё нет.
+    Используется `aiosqlite` для асинхронного подключения.
+    """
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("""
             CREATE TABLE IF NOT EXISTS users (
@@ -27,7 +35,21 @@ async def init_db():
                 raise
         await db.commit()
 
+
 async def register_user(user_id: int, username: str, first_name: str) -> bool:
+    """Регистрирует нового пользователя в базе данных.
+
+    Args:
+        user_id (int): Уникальный идентификатор пользователя Telegram.
+        username (str): Имя пользователя (username) из Telegram.
+        first_name (str): Имя пользователя (first_name) из Telegram.
+
+    Returns:
+        bool: True, если пользователь был успешно добавлен; False, если уже существует.
+
+    Регистрация включает сохранение времени регистрации и последней активности.
+    Поле `favorite_city` инициализируется как None.
+    """
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute("SELECT 1 FROM users WHERE id = ?", (user_id,))
         exist = await cursor.fetchone()
@@ -42,7 +64,15 @@ async def register_user(user_id: int, username: str, first_name: str) -> bool:
             return True
         return False
 
+
 async def increment_message_count(user_id: int):
+    """Увеличивает счётчик сообщений пользователя и обновляет время последней активности.
+
+    Args:
+        user_id (int): Уникальный идентификатор пользователя Telegram.
+
+    Операция выполняется атомарно в рамках одной транзакции.
+    """
     async with aiosqlite.connect(DB_PATH) as db:
         now = datetime.now().strftime("%Y-%m-%d %H-%M:%S")
         await db.execute(
@@ -51,7 +81,18 @@ async def increment_message_count(user_id: int):
         )
         await db.commit()
 
+
 async def get_user(user_id: int):
+    """Получает информацию о пользователе по его ID.
+
+    Args:
+        user_id (int): Уникальный идентификатор пользователя Telegram.
+
+    Returns:
+        dict or None: Словарь с данными пользователя, если найден, иначе None.
+        Ключи словаря: 'id', 'username', 'first_name', 'message_count', 'registered',
+        'last_activity', 'favorite_city'.
+    """
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute("SELECT * FROM users WHERE id = ?", (user_id,))
         row = await cursor.fetchone()
@@ -69,6 +110,12 @@ async def get_user(user_id: int):
 
 
 async def get_all_users():
+    """Получает список всех зарегистрированных пользователей.
+
+    Returns:
+        list of dict: Список словарей с данными всех пользователей.
+        Каждый словарь содержит те же поля, что и в `get_user`.
+    """
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute("SELECT * FROM users")
         rows = await cursor.fetchall()
@@ -85,7 +132,22 @@ async def get_all_users():
             for row in rows
         ]
 
+
 async def delete_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик команды удаления пользователя из базы данных.
+
+    Доступно только для администратора (ID из config.ADMIN_USER_ID).
+
+    Args:
+        update (Update): Объект обновления от Telegram.
+        context (ContextTypes.DEFAULT_TYPE): Контекст выполнения команды.
+
+    Поведение:
+        - Проверяет права доступа.
+        - Ожидает ID пользователя как аргумент.
+        - Удаляет пользователя из БД, если он существует.
+        - Отправляет соответствующие сообщения в чат.
+    """
     if update.message.from_user.id != ADMIN_USER_ID:
         await update.message.reply_text("❌ Доступ запрещён.")
         return
@@ -109,6 +171,17 @@ async def delete_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_favorite_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Обработчик команды установки любимого города пользователя.
+
+    Args:
+        update (Update): Объект обновления от Telegram.
+        context (ContextTypes.DEFAULT_TYPE): Контекст выполнения команды.
+
+    Поведение:
+        - Ожидает название города как аргумент команды.
+        - Обновляет поле `favorite_city` для текущего пользователя.
+        - Подтверждает установку города в чате.
+    """
     if not context.args:
         await update.message.reply_text("Использование: /setcity <город>")
         return
@@ -119,4 +192,3 @@ async def set_favorite_city(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await db.execute("UPDATE users SET favorite_city = ? WHERE id = ?", (city, user_id,))
         await db.commit()
     await update.message.reply_text(f"Город по умолчанию {city}")
-
